@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Sudoku Solver</title>
+    <style>
+        html,
+        body {
+            text-align: center;
+        }
+
+        textarea {
+            resize: none;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <label for="input">Input: </label>
+    <input type="text" id="input" maxlength="81"></input><br><br>
+    <span id="status"></span><br><br>
+    <canvas></canvas>
+    <br><br>
+    <button id="btn_solve" style="color:white;background-color:green;width:100px;height:50px;border-radius:10px;border:1px solid black;">Solve!</button>
+    <script>
+        let ctx = document.querySelector("canvas").getContext("2d");
+        let input = document.getElementById("input");
+        let btn_solve = document.getElementById("btn_solve");
+        let status = document.getElementById("status");
+        ctx.canvas.width = 540;
+        ctx.canvas.height = 540;
+
+        let board = [];
+        for (let i = 0; i < 9; i++) {
+            board[i] = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+        }
+
+        drawGrid();
+        drawValues(board);
+
+        btn_solve.addEventListener("click", function () {
+            if (input.value.length === 81) {
+                for (let i = 0; i < 9; i++) {
+                    for (let j = 0; j < 9; j++) {
+                        board[i][j] = parseInt(input.value[i * 9 + j]) || 0;
+                    }
+                }
+                let t_start = performance.now();
+                solve();
+                let t_end = performance.now();
+                status.innerHTML = "Solved in " + (t_end - t_start) + " ms!";
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                drawGrid();
+                drawValues(board);
+            } else {
+                status.innerHTML = "Input is not a valid board!";
+            }
+
+        });
+
+        input.addEventListener("keyup", function () {
+            if (input.value.length === 81) {
+                for (let i = 0; i < 9; i++) {
+                    for (let j = 0; j < 9; j++) {
+                        board[i][j] = parseInt(input.value[i * 9 + j]);
+                    }
+                }
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                drawGrid();
+                drawValues(board);
+            }
+        });
+
+        //drawing
+
+        function drawGrid() {
+            ctx.strokeStyle = "black";
+            for (let i = 0; i <= 9; i++) {
+                if (i % 3 === 0)
+                    ctx.lineWidth = 3;
+                else
+                    ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, i * (ctx.canvas.height / 9));
+                ctx.lineTo(ctx.canvas.width, i * (ctx.canvas.height / 9));
+                ctx.moveTo(i * (ctx.canvas.width / 9), 0);
+                ctx.lineTo(i * (ctx.canvas.width / 9), ctx.canvas.height);
+                ctx.stroke();
+            }
+        }
+
+        function drawValues(values) {
+            ctx.font = "30px Arial";
+            ctx.fillStyle = "black";
+            for (let i = 0; i < 9; i++) {
+                for (let j = 0; j < 9; j++) {
+                    ctx.fillText(values[i][j], j * (ctx.canvas.width / 9) + 22, i * (ctx.canvas.height / 9) + 41);
+                }
+            }
+        }
+
+        //sudoku solving
+
+        function in_row(row, num) {
+            for (let i = 0; i < 9; i++) {
+                if (board[row][i] === num)
+                    return true;
+            }
+            return false;
+        }
+
+        function in_col(col, num) {
+            for (let i = 0; i < 9; i++) {
+                if (board[i][col] === num)
+                    return true;
+            }
+            return false;
+        }
+
+        function in_grid(row, col, num) {
+            row = Math.floor(row / 3) * 3;
+            col = Math.floor(col / 3) * 3;
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    if (board[row + i][col + j] === num)
+                        return true;
+                }
+            }
+            return false;
+        }
+
+        function is_valid(row, col, num) {
+            return !in_row(row, num) && !in_col(col, num) && !in_grid(row, col, num);
+        }
+
+        function next_empty() {
+            for (let i = 0; i < 9; i++) {
+                for (let j = 0; j < 9; j++) {
+                    if (board[i][j] === 0) {
+                        return { row: i, col: j }
+                    }
+                }
+            }
+            return false;
+        }
+
+        function solve() {
+            let next = next_empty();
+            if (!next)
+                return true;
+            for (let i = 1; i <= 9; i++) {
+                if (is_valid(next.row, next.col, i)) {
+                    board[next.row][next.col] = i;
+                    if (solve()) {
+                        return true;
+                    }
+                    board[next.row][next.col] = 0;
+                }
+            }
+            return false;
+        }
+    </script>
+</body>
+
+</html>
