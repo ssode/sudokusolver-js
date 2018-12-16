@@ -43,7 +43,7 @@
             if (input.value.length === 81) {
                 for (let i = 0; i < 9; i++) {
                     for (let j = 0; j < 9; j++) {
-                        board[i][j] = parseInt(input.value[i * 9 + j]) || 0;
+                        board[i][j] = parseInt(input.value[i * 9 + j]);
                     }
                 }
                 let t_start = performance.now();
