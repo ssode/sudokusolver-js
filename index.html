@@ -2,6 +2,7 @@
 <html>
 
 <head>
+    <meta charset="UTF-8">
     <title>Sudoku Solver</title>
     <style>
         html,
@@ -60,16 +61,18 @@
         });
 
         input.addEventListener("keyup", function () {
-            if (input.value.length === 81) {
-                for (let i = 0; i < 9; i++) {
-                    for (let j = 0; j < 9; j++) {
+            for (let i = 0; i < 9; i++) {
+                for (let j = 0; j < 9; j++) {
+                    if ((i*9+j) < input.value.length) {
                         board[i][j] = parseInt(input.value[i * 9 + j]);
+                    } else {
+                        board[i][j] = 0;
                     }
                 }
-                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-                drawGrid();
-                drawValues(board);
             }
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            drawGrid();
+            drawValues(board);
         });
 
         //drawing
