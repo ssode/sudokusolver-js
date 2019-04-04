@@ -2,167 +2,75 @@
 <html>
 
 <head>
-    <meta charset="UTF-8">
     <title>Sudoku Solver</title>
-    <style>
-        html,
-        body {
-            text-align: center;
-        }
-
-        textarea {
-            resize: none;
-            overflow: hidden;
-        }
-    </style>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <label for="input">Input: </label>
-    <input type="text" id="input" maxlength="81"></input><br><br>
-    <span id="status"></span><br><br>
-    <canvas></canvas>
-    <br><br>
-    <button id="btn_solve" style="color:white;background-color:green;width:100px;height:50px;border-radius:10px;border:1px solid black;">Solve!</button>
+    <h1>Sudoku Solver</h1>
+    <div id="inputsArea"></div>
+    <div id="resultArea"></div>
+    <button id="btnGen">Generate</button> <button id="btnSolve">Solve</button>
+    <script src="sudoku.js"></script>
     <script>
-        let ctx = document.querySelector("canvas").getContext("2d");
-        let input = document.getElementById("input");
-        let btn_solve = document.getElementById("btn_solve");
-        let status = document.getElementById("status");
-        ctx.canvas.width = 540;
-        ctx.canvas.height = 540;
-
-        let board = [];
-        for (let i = 0; i < 9; i++) {
-            board[i] = [0, 0, 0, 0, 0, 0, 0, 0, 0];
-        }
-
-        drawGrid();
-        drawValues(board);
-
-        btn_solve.addEventListener("click", function () {
-            if (input.value.length === 81) {
+        (function () {
+            const inputsArea = document.getElementById("inputsArea");
+            const resultArea = document.getElementById("resultArea");
+            const validInputs = new Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+            for (let i = 0; i < 9; i++) {
+                for (let j = 0; j < 9; j++) {
+                    let newInput = document.createElement("input");
+                    inputsArea.appendChild(newInput);
+                    newInput.className = "sudokuInput";
+                    newInput.id = `input${i}${j}`;
+                    newInput.maxLength = 1;
+                }
+                inputsArea.innerHTML += "<br>";
+            }
+            document.getElementById("btnSolve").addEventListener("click", () => {
+                const board = new Array(9).fill(null).map(r => r = new Array(9).fill(0));
                 for (let i = 0; i < 9; i++) {
                     for (let j = 0; j < 9; j++) {
-                        board[i][j] = parseInt(input.value[i * 9 + j]);
+                        const input = document.getElementById(`input${i}${j}`).value;
+                        if (input === "" || input === " ") {
+                            continue;
+                        }
+                        const value = parseInt(input);
+                        if (validInputs.has(value)) {
+                            board[i][j] = value;
+                        } else {
+                            resultArea.innerHTML = "Invalid input";
+                            return;
+                        }
                     }
                 }
-                let t_start = performance.now();
-                solve();
-                let t_end = performance.now();
-                status.innerHTML = "Solved in " + (t_end - t_start) + " ms!";
-                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-                drawGrid();
-                drawValues(board);
-            } else {
-                status.innerHTML = "Input is not a valid board!";
-            }
-
-        });
-
-        input.addEventListener("keyup", function () {
-            for (let i = 0; i < 9; i++) {
-                for (let j = 0; j < 9; j++) {
-                    if ((i*9+j) < input.value.length) {
-                        board[i][j] = parseInt(input.value[i * 9 + j]);
-                    } else {
-                        board[i][j] = 0;
+                const solver = new SudokuSolver(board);
+                if (!solver.isValidBoard()) {
+                    resultArea.innerHTML = "Invalid input";
+                    return;
+                }
+                const startTime = new Date().getTime();
+                if (solver.solve()) {
+                    const elapsedTime = new Date().getTime() - startTime;
+                    resultArea.innerHTML = `Solved in ${elapsedTime}ms`;
+                    for (let i = 0; i < board.length; i++) {
+                        for (let j = 0; j < board[i].length; j++) {
+                            document.getElementById(`input${i}${j}`).value = board[i][j];
+                        }
                     }
                 }
-            }
-            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-            drawGrid();
-            drawValues(board);
-        });
-
-        //drawing
-
-        function drawGrid() {
-            ctx.strokeStyle = "black";
-            for (let i = 0; i <= 9; i++) {
-                if (i % 3 === 0)
-                    ctx.lineWidth = 3;
-                else
-                    ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(0, i * (ctx.canvas.height / 9));
-                ctx.lineTo(ctx.canvas.width, i * (ctx.canvas.height / 9));
-                ctx.moveTo(i * (ctx.canvas.width / 9), 0);
-                ctx.lineTo(i * (ctx.canvas.width / 9), ctx.canvas.height);
-                ctx.stroke();
-            }
-        }
-
-        function drawValues(values) {
-            ctx.font = "30px Arial";
-            ctx.fillStyle = "black";
-            for (let i = 0; i < 9; i++) {
-                for (let j = 0; j < 9; j++) {
-                    ctx.fillText(values[i][j], j * (ctx.canvas.width / 9) + 22, i * (ctx.canvas.height / 9) + 41);
-                }
-            }
-        }
-
-        //sudoku solving
-
-        function in_row(row, num) {
-            for (let i = 0; i < 9; i++) {
-                if (board[row][i] === num)
-                    return true;
-            }
-            return false;
-        }
-
-        function in_col(col, num) {
-            for (let i = 0; i < 9; i++) {
-                if (board[i][col] === num)
-                    return true;
-            }
-            return false;
-        }
-
-        function in_grid(row, col, num) {
-            row = Math.floor(row / 3) * 3;
-            col = Math.floor(col / 3) * 3;
-            for (let i = 0; i < 3; i++) {
-                for (let j = 0; j < 3; j++) {
-                    if (board[row + i][col + j] === num)
-                        return true;
-                }
-            }
-            return false;
-        }
-
-        function is_valid(row, col, num) {
-            return !in_row(row, num) && !in_col(col, num) && !in_grid(row, col, num);
-        }
-
-        function next_empty() {
-            for (let i = 0; i < 9; i++) {
-                for (let j = 0; j < 9; j++) {
-                    if (board[i][j] === 0) {
-                        return { row: i, col: j }
+            });
+            document.getElementById("btnGen").addEventListener("click", () => {
+                const generator = new SudokuGenerator();
+                const board = generator.generate();
+                for (let i = 0; i < board.length; i++) {
+                    for (let j = 0; j < board[i].length; j++) {
+                        document.getElementById(`input${i}${j}`).value = board[i][j] === 0 ? "" : board[i][j];
                     }
                 }
-            }
-            return false;
-        }
-
-        function solve() {
-            let next = next_empty();
-            if (!next)
-                return true;
-            for (let i = 1; i <= 9; i++) {
-                if (is_valid(next.row, next.col, i)) {
-                    board[next.row][next.col] = i;
-                    if (solve()) {
-                        return true;
-                    }
-                    board[next.row][next.col] = 0;
-                }
-            }
-            return false;
-        }
+            });
+        })();
     </script>
 </body>
 
