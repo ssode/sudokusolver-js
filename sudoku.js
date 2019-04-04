@@ -162,9 +162,3 @@ class SudokuSolver extends Sudoku {
         return false; // no value worked in this position, so return false to go back
     }
 }
-
-const board = new SudokuGenerator().generate();
-const solver = new SudokuSolver(board);
-console.log(solver.boardToString());
-solver.solve();
-console.log(solver.boardToString());
